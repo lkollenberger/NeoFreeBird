@@ -5,9 +5,9 @@
   <i>Twitter, the way it was meant to be</i>
 
   <p>
-    A modified Twitter app, with branding reverts, <a href="https://github.com/actuallyaridan/NeoFreeBird-BHTwitter">an updated BHTwitter fork</a>, and other QoL changes.
+    A modified Twitter app for iOS/iPadOS devices with branding reverts, <a href="https://github.com/actuallyaridan/NeoFreeBird-BHTwitter"> a new updated BHTwitter</a>, and many other useful features.
     <br> 
-    Originally started as <a href="https://github.com/nyathea/FreeBird">FreeBird by nyathea</a>
+    Project originally started as <a href="https://github.com/nyathea/FreeBird">FreeBird by nyathea</a>
     <br>
   </p>
 
@@ -38,6 +38,45 @@ NeoFreeBird is an modern Twitter/X version with various changes such as branding
 | ![](./Branding/screenshots/IMG_9195.png) | ![](./Branding/screenshots/IMG_9196.png) | ![](./Branding/screenshots/IMG_9198.png) |
 | ![](./Branding/screenshots/IMG_9199.png) |   |   |
 
+## Developers
+
+<table>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/actuallyaridan">
+        <img src="https://unavatar.io/github/actuallyaridan" width="80" height="80" alt="aridan" />
+      </a>
+    </td>
+    <td>
+      <b>@actuallyaridan</b><br />
+      Lead Maintainer
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/nyathea">
+        <img src="https://unavatar.io/github/nyathea" width="80" height="80" alt="nyathea" />
+      </a>
+    </td>
+    <td>
+      <b>@nyathea</b><br />
+      Tweak Developer
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/timi2506">
+        <img src="https://unavatar.io/github/timi2506" width="80" height="80" alt="timi2506" />
+      </a>
+    </td>
+    <td>
+      <b>@timi2506</b><br />
+      Contributor & Support
+    </td>
+  </tr>
+</table>
+
+> Please feel free to contribute to our project as well! we'd love to get all the help possible as we're working on this in our free time
 
 > [!NOTE]  
-> <b>There are some remains</b><br>You may still see some X branding and references to posts/posting, especially in web based stuff like Community Notes. We try our best to get rid of most of them.
+> <b>There are some remains</b><br>You may still see some X branding in web based stuff. We try our best to get rid of most of them.
