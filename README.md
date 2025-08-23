@@ -60,7 +60,7 @@ NeoFreeBird is an modern Twitter/X version with various changes such as branding
     </td>
     <td>
       <b>@nyathea</b><br />
-      Tweak Developer
+      Main Tweak Developer
     </td>
   </tr>
   <tr>
@@ -71,7 +71,7 @@ NeoFreeBird is an modern Twitter/X version with various changes such as branding
     </td>
     <td>
       <b>@timi2506</b><br />
-      Contributor & Support
+      Contributor & Assistance
     </td>
   </tr>
 </table>
