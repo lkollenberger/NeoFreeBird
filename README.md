@@ -2,13 +2,10 @@
     <img src="./Branding/Icon_rounded.png" alt="NeoFreeBird" width="130" height="130">
  
   # NeoFreeBird
-  <i>Twitter, the way it was meant to be</i>
+  <i>The Twitter app that you deserve</i>
 
   <p>
-    A modified Twitter app for iOS/iPadOS devices with branding reverts, <a href="https://github.com/actuallyaridan/NeoFreeBird-BHTwitter"> a new updated BHTwitter</a>, and many other useful features.
-    <br> 
-    Project originally started as <a href="https://github.com/nyathea/FreeBird">FreeBird by nyathea</a>
-    <br>
+    A modified Twitter/X app for iOS/iPadOS devices with branding reverts, <a href="https://github.com/actuallyaridan/NeoFreeBird-BHTwitter"> a new updated BHTwitter</a>, and many other useful features.
   </p>
 
   <div>
@@ -30,7 +27,7 @@
 
 
 ## Features
-NeoFreeBird is an modern Twitter/X version with various changes such as branding reverts, removal of unnecessary features, along with our own fork of BHTwitter for blocking ads, getting various Twitter Blue features for free and being able to customize Twitter in various ways. Theres tons of new features to try!
+NeoFreeBird uses a modern app version with various changes such as branding reverts, removal of unnecessary features, along with our own fork of BHTwitter for blocking ads, getting various Twitter Blue features for free and being able to customize Twitter in various ways. Theres tons of new features to try!
 
 | | | |
 |:-------------------------:|:-------------------------:|:-------------------------:|
@@ -75,8 +72,6 @@ NeoFreeBird is an modern Twitter/X version with various changes such as branding
     </td>
   </tr>
 </table>
-
-> Please feel free to contribute to our project as well! we'd love to get all the help possible as we're working on this in our free time
 
 > [!NOTE]  
 > <b>There are some remains</b><br>You may still see some X branding in web based stuff. We try our best to get rid of most of them.
