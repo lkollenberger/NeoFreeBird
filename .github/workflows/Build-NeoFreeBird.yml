@@ -40,15 +40,15 @@ jobs:
       contents: write
 
     steps:
-     - name: Checkout app repo (for patches)
-       uses: actions/checkout@v4
-       with:
-         repository: NeoFreeBird/app
-         path: app
-         ref: ${{ inputs.repo_commit || github.ref }}
-         submodules: recursive
+      - name: Checkout main repo
+        uses: actions/checkout@v4
+        with:
+          repository: NeoFreeBird/app
+          path: app
+          ref: ${{ inputs.repo_commit || github.ref }}
+          submodules: recursive
 
-     - name: Checkout tweak repo (NeoFreeBird/tweak)
+      - name: Checkout tweak repo (NeoFreeBird/tweak)
         uses: actions/checkout@v4
         with:
           repository: NeoFreeBird/tweak
