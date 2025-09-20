@@ -55,12 +55,6 @@ jobs:
           ref: ${{ inputs.tweak_commit || 'refs/heads/master' }}
           submodules: recursive
 
-      - name: Install utilities
-        run: |
-          brew update || true
-          brew install make ldid unzip zip rsync || true
-          python3 -m pip install --upgrade pip setuptools || true
-
       - name: Add GNU Make to PATH
         run: |
           echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
@@ -77,16 +71,6 @@ jobs:
         run: |
           python3 -m pip install --force-reinstall https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 
-      - name: iOS SDK caching
-        id: SDK
-        uses: actions/cache@v4
-        env:
-          cache-name: iOS-${{ inputs.sdk_version }}-SDK
-        with:
-          path: theos/sdks/
-          key: ${{ env.cache-name }}
-          restore-keys: ${{ env.cache-name }}
-
       - name: Download iOS SDK
         if: steps.SDK.outputs.cache-hit != 'true'
         env:
@@ -97,6 +81,16 @@ jobs:
           git sparse-checkout set --no-cone iPhoneOS${{ inputs.sdk_version }}.sdk
           git checkout
           mv ./*.sdk "${THEOS}/sdks"
+
+      - name: iOS SDK caching
+        id: SDK
+        uses: actions/cache@v4
+        env:
+          cache-name: iOS-${{ inputs.sdk_version }}-SDK
+        with:
+          path: theos/sdks/
+          key: ${{ env.cache-name }}
+          restore-keys: ${{ env.cache-name }}
 
       - name: Build tweak with Theos
         id: build_tweak
@@ -156,7 +150,7 @@ jobs:
       - name: Apply patches into Twitter.app
         run: |
           set -e
-          PATCH_SRC="main/app/NeoFreeBird/Patches"
+          PATCH_SRC="app/NeoFreeBird/Patches"
           TARGET_APP_DIR=$(find main/tmp/Payload -maxdepth 1 -type d -name "*.app" | head -n1)
           if [ ! -d "${PATCH_SRC}" ]; then
             echo "ERROR: patch source not found at ${PATCH_SRC}"
