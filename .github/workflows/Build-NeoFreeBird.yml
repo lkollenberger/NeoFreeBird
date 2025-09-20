@@ -35,7 +35,7 @@ concurrency:
 jobs:
   build-and-inject:
     name: Build NeoFreeBird
-    runs-on: macos-latest
+    runs-on: macos-13
     permissions:
       contents: write
 
@@ -58,7 +58,7 @@ jobs:
       - name: Install utilities
         run: |
           brew update || true
-          brew install make ldid wget unzip zip rsync python3 || true
+          brew install make ldid unzip zip rsync || true
           python3 -m pip install --upgrade pip setuptools || true
 
       - name: Add GNU Make to PATH
