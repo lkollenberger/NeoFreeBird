@@ -55,6 +55,12 @@ jobs:
           ref: ${{ inputs.tweak_commit || 'refs/heads/master' }}
           submodules: recursive
 
+      - name: Install utilities
+        run: |
+          brew update || true
+          brew install make ldid unzip zip rsync || true
+          python3 -m pip install --upgrade pip setuptools || true
+
       - name: Add GNU Make to PATH
         run: |
           echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
