@@ -52,7 +52,7 @@ jobs:
         with:
           repository: NeoFreeBird/tweak
           path: tweak
-          ref: ${{ inputs.tweak_commit || 'refs/heads/main' }}
+          ref: ${{ inputs.tweak_commit || 'refs/heads/master' }}
           submodules: recursive
 
       - name: Install system utilities
