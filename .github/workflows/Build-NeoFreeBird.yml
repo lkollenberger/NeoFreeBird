@@ -34,13 +34,13 @@ concurrency:
 
 jobs:
   build-and-inject:
-    name: Build tweak, inject into IPA, upload artifacts
+    name: Build NeoFreeBird
     runs-on: macos-13
     permissions:
       contents: write
 
     steps:
-      - name: Checkout main repo (patches)
+      - name: Checkout main repo
         uses: actions/checkout@v4
         with:
           path: main
@@ -55,7 +55,7 @@ jobs:
           ref: ${{ inputs.tweak_commit || 'refs/heads/master' }}
           submodules: recursive
 
-      - name: Install system utilities
+      - name: Install utilities
         run: |
           brew update || true
           brew install make ldid wget unzip zip rsync python3 || true
@@ -77,7 +77,7 @@ jobs:
         run: |
           python3 -m pip install --force-reinstall https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 
-      - name: iOS SDK caching (theos sdks)
+      - name: iOS SDK caching
         id: SDK
         uses: actions/cache@v4
         env:
@@ -87,7 +87,7 @@ jobs:
           key: ${{ env.cache-name }}
           restore-keys: ${{ env.cache-name }}
 
-      - name: Download iOS SDK (cache miss)
+      - name: Download iOS SDK
         if: steps.SDK.outputs.cache-hit != 'true'
         env:
           THEOS: ${{ github.workspace }}/theos
@@ -98,7 +98,7 @@ jobs:
           git checkout
           mv ./*.sdk "${THEOS}/sdks"
 
-      - name: Build tweak with Theos (produce .deb)
+      - name: Build tweak with Theos
         id: build_tweak
         env:
           THEOS: ${{ github.workspace }}/theos
@@ -131,7 +131,7 @@ jobs:
           echo "Built tweak deb: $DEB"
         shell: bash
 
-      - name: Download & unpack decrypted X ipa
+      - name: Download & unpack decrypted Twitter/X ipa
         id: unpack
         env:
           IPA_URL: ${{ inputs.decrypted_ipa_url }}
@@ -153,10 +153,10 @@ jobs:
           echo "X_VERSION=$X_VERSION" >> "$GITHUB_ENV"
           echo "X_VERSION=$X_VERSION"
 
-      - name: Apply patches into Twitter.app root (replace files)
+      - name: Apply patches into Twitter.app
         run: |
           set -e
-          PATCH_SRC="main/app/NeoFreeBird/patches"
+          PATCH_SRC="main/app/NeoFreeBird/Patches"
           TARGET_APP_DIR=$(find main/tmp/Payload -maxdepth 1 -type d -name "*.app" | head -n1)
           if [ ! -d "${PATCH_SRC}" ]; then
             echo "ERROR: patch source not found at ${PATCH_SRC}"
@@ -172,7 +172,7 @@ jobs:
           find "${TARGET_APP_DIR}" -maxdepth 2 -type f -print | sed -n '1,200p'
         shell: bash
 
-      - name: Repack Payload into base IPA & TIPA (unsigned)
+      - name: Repack Payload into IPA
         id: repack
         run: |
           set -e
@@ -187,7 +187,7 @@ jobs:
           ls -lah ../packages || true
         shell: bash
 
-      - name: Inject compiled tweak (.deb) into the repacked IPA using cyan
+      - name: Inject compiled tweak into IPA using cyan
         id: inject
         run: |
           set -e
@@ -212,14 +212,14 @@ jobs:
           ls -lah main/packages || true
         shell: bash
 
-      - name: Upload injected IPA artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: NeoFreeBird-injected-IPA
           path: ${{ steps.inject.outputs.injected_ipa }}
           if-no-files-found: error
 
-      - name: Upload injected TIPA artifact
+      - name: Upload TIPA
         uses: actions/upload-artifact@v4
         with:
           name: NeoFreeBird-injected-TIPA
