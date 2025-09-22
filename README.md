@@ -35,43 +35,5 @@ NeoFreeBird uses a modern app version with various changes such as branding reve
 | ![](./Branding/screenshots/IMG_9195.png) | ![](./Branding/screenshots/IMG_9196.png) | ![](./Branding/screenshots/IMG_9198.png) |
 | ![](./Branding/screenshots/IMG_9199.png) |   |   |
 
-## Developers
-
-<table>
-  <tr>
-    <td width="100" align="center">
-      <a href="https://github.com/actuallyaridan">
-        <img src="https://unavatar.io/github/actuallyaridan" width="80" height="80" alt="aridan" />
-      </a>
-    </td>
-    <td>
-      <b>@actuallyaridan</b><br />
-      Lead Maintainer
-    </td>
-  </tr>
-  <tr>
-    <td width="100" align="center">
-      <a href="https://github.com/nyathea">
-        <img src="https://unavatar.io/github/nyathea" width="80" height="80" alt="nyathea" />
-      </a>
-    </td>
-    <td>
-      <b>@nyathea</b><br />
-      Main Tweak Developer
-    </td>
-  </tr>
-  <tr>
-    <td width="100" align="center">
-      <a href="https://github.com/timi2506">
-        <img src="https://unavatar.io/github/timi2506" width="80" height="80" alt="timi2506" />
-      </a>
-    </td>
-    <td>
-      <b>@timi2506</b><br />
-      Contributor & Assistance
-    </td>
-  </tr>
-</table>
-
 > [!NOTE]  
 > <b>There are some remains</b><br>You may still see some X branding in web based stuff. We try our best to get rid of most of them.
