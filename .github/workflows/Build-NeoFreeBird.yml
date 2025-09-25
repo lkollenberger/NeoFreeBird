@@ -74,28 +74,7 @@ jobs:
       - name: Install cyan
         run: pip install https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 
-      - name: iOS SDK Caching
-        id: SDK
-        uses: actions/cache@v4
-        env:
-          cache-name: iOS-${{ inputs.sdk_version }}-SDK
-        with:
-          path: theos/sdks/
-          key: ${{ env.cache-name }}
-          restore-keys: ${{ env.cache-name }}
-
-      - name: Download iOS SDK
-        if: steps.SDK.outputs.cache-hit != 'true'
-        run: |
-          git clone -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
-          cd sdks
-          git sparse-checkout set --no-cone iPhoneOS${{ inputs.sdk_version }}.sdk
-          git checkout
-          mv ./*.sdk "${THEOS}/sdks"
-        env:
-          THEOS: ${{ github.workspace }}/theos
-
-      - name: Prepare X iPA
+      - name: Prepare Twitter/X iPA
         run: |
           wget "$IPA_URL" --no-verbose -O main/packages/com.atebits.Tweetie2.ipa
           unzip -q main/packages/com.atebits.Tweetie2.ipa -d main/tmp
@@ -114,15 +93,14 @@ jobs:
         env:
           THEOS: ${{ github.workspace }}/theos
 
-      - name: Copy tweak to main packages
+      - name: Copy built tweak to main/packages
         run: |
-          DEB_FILE=$(find tweak -name "*.deb" -type f | head -n1)
-          if [ -n "$DEB_FILE" ]; then
-            cp "$DEB_FILE" main/packages/
-          else
-            echo "ERROR: No .deb file found"
-            exit 1
-          fi
+         TWEAK_DEB=$(find tweak -type f -name "*.deb" | head -n1)
+         if [ -z "$TWEAK_DEB" ]; then
+         echo "No .deb built in tweak repo (tweak/)"
+         exit 1
+         fi
+         cp "$TWEAK_DEB" main/packages/
 
       - name: Apply patches and inject tweak
         run: |
