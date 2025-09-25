@@ -17,16 +17,6 @@ on:
         default: "14.0"
         required: true
         type: string
-      repo_commit:
-        description: "(Optional) Commit for main repo (patches)"
-        default: ""
-        required: false
-        type: string
-      tweak_commit:
-        description: "(Optional) Commit for tweak repo"
-        default: ""
-        required: false
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -78,6 +68,16 @@ jobs:
         run: |
           python3 -m pip install --force-reinstall https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 
+      - name: iOS SDK caching
+        id: SDK
+        uses: actions/cache@v4
+        env:
+          cache-name: iOS-${{ inputs.sdk_version }}-SDK
+        with:
+          path: theos/sdks/
+          key: ${{ env.cache-name }}
+          restore-keys: ${{ env.cache-name }}
+
       - name: Download iOS SDK
         if: steps.SDK.outputs.cache-hit != 'true'
         env:
@@ -89,16 +89,6 @@ jobs:
           git checkout
           mv ./*.sdk "${THEOS}/sdks"
 
-      - name: iOS SDK caching
-        id: SDK
-        uses: actions/cache@v4
-        env:
-          cache-name: iOS-${{ inputs.sdk_version }}-SDK
-        with:
-          path: theos/sdks/
-          key: ${{ env.cache-name }}
-          restore-keys: ${{ env.cache-name }}
-
       - name: Build tweak with Theos
         id: build_tweak
         env:
@@ -108,19 +98,14 @@ jobs:
         run: |
           set -e
           cd tweak
-          # Try to set TARGET in Makefile if present (portable sed for macOS)
           if [ -f Makefile ]; then
             sed -i '' "s/^TARGET.*$/TARGET := iphone:clang:${SDK_VER}:${TARGET_IOS}/" Makefile || true
           fi
-          # Ensure build dirs exist
           mkdir -p packages
-          # Build package (this creates the .deb in typical Theos projects)
           make clean || true
           make package || make || true
-          # Find .deb (fail if not found)
           DEB=$(find . -type f -name "*.deb" -print | head -n1 || true)
           if [ -z "$DEB" ]; then
-            # try common packages dir
             DEB=$(find packages -type f -name "*.deb" -print | head -n1 || true)
           fi
           if [ -z "$DEB" ]; then
@@ -150,7 +135,7 @@ jobs:
           fi
           X_VERSION=$(grep -A 1 '<key>CFBundleShortVersionString</key>' "$TARGET_APP_DIR/Info.plist" \
             | grep '<string>' | awk -F'[><]' '{print $3}' || echo "unknown")
-          echo "TARGET_APP_DIR=$TARGET_APP_DIR" >> "$GITHUB_OUTPUT"
+          echo "target_app_dir=$TARGET_APP_DIR" >> "$GITHUB_OUTPUT"
           echo "X_VERSION=$X_VERSION" >> "$GITHUB_ENV"
           echo "X_VERSION=$X_VERSION"
 
@@ -158,7 +143,7 @@ jobs:
         run: |
           set -e
           PATCH_SRC="app/NeoFreeBird/Patches"
-          TARGET_APP_DIR=$(find main/tmp/Payload -maxdepth 1 -type d -name "*.app" | head -n1)
+          TARGET_APP_DIR="${{ steps.unpack.outputs.target_app_dir }}"
           if [ ! -d "${PATCH_SRC}" ]; then
             echo "ERROR: patch source not found at ${PATCH_SRC}"
             exit 1
@@ -167,7 +152,6 @@ jobs:
             echo "ERROR: could not find .app inside unpacked Payload"
             exit 1
           fi
-          # Mirror patches into the .app root, replacing files. --delete makes patches authoritative.
           rsync -av --delete "${PATCH_SRC}/" "${TARGET_APP_DIR}/"
           echo "Patched files (sample):"
           find "${TARGET_APP_DIR}" -maxdepth 2 -type f -print | sed -n '1,200p'
@@ -178,7 +162,7 @@ jobs:
         run: |
           set -e
           mkdir -p main/packages
-          BASE="NeoFreeBird_base_${{ env.GITHUB_RUN_ID }}_${{ env.X_VERSION }}"
+          BASE="NeoFreeBird_base_${{ github.run_id }}_${{ env.X_VERSION }}"
           cd main/tmp
           rm -f "../packages/${BASE}.ipa" "../packages/${BASE}.tipa"
           zip -qr "../packages/${BASE}.ipa" Payload
@@ -200,13 +184,9 @@ jobs:
             ls -lah tweak || true
             exit 1
           fi
-          # produce injected outputs
           INJECTED_IPA="main/packages/$(basename "${BASE_IPA%.*}")-injected.ipa"
           INJECTED_TIPA="main/packages/$(basename "${BASE_TIPA%.*}")-injected.tipa"
-          # Use cyan to inject the .deb into the .ipa
-          # cyan CLI supports: cyan -i input.ipa -f file_or_deb -o output.ipa
           cyan -i "${BASE_IPA}" -f "${DEB_PATH}" -o "${INJECTED_IPA}"
-          # Make tipa copy (same content) and also attempt inject there too (redundant but safe)
           cp "${INJECTED_IPA}" "${INJECTED_TIPA}"
           echo "injected_ipa=${INJECTED_IPA}" >> "$GITHUB_OUTPUT"
           echo "injected_tipa=${INJECTED_TIPA}" >> "$GITHUB_OUTPUT"
