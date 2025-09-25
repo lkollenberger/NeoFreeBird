@@ -17,6 +17,16 @@ on:
         default: "14.0"
         required: true
         type: string
+      repo_commit:
+        description: "(Optional) Commit for main repo (patches)"
+        default: ""
+        required: false
+        type: string
+      tweak_commit:
+        description: "(Optional) Commit for tweak repo"
+        default: ""
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -34,7 +44,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: NeoFreeBird/app
-          path: app
+          path: main
           ref: ${{ inputs.repo_commit || github.ref }}
           submodules: recursive
 
@@ -46,11 +56,8 @@ jobs:
           ref: ${{ inputs.tweak_commit || 'refs/heads/master' }}
           submodules: recursive
 
-      - name: Install utilities
-        run: |
-          brew update || true
-          brew install make ldid unzip zip rsync || true
-          python3 -m pip install --upgrade pip setuptools || true
+      - name: Install Dependencies
+        run: brew install make dpkg ldid
 
       - name: Add GNU Make to PATH
         run: |
@@ -64,11 +71,10 @@ jobs:
           path: theos
           submodules: recursive
 
-      - name: Install cyan (pyzule-rw) for injection
-        run: |
-          python3 -m pip install --force-reinstall https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
+      - name: Install cyan
+        run: pip install https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 
-      - name: iOS SDK caching
+      - name: iOS SDK Caching
         id: SDK
         uses: actions/cache@v4
         env:
@@ -80,129 +86,80 @@ jobs:
 
       - name: Download iOS SDK
         if: steps.SDK.outputs.cache-hit != 'true'
-        env:
-          THEOS: ${{ github.workspace }}/theos
         run: |
-          git clone -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/ sdks
+          git clone -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
           cd sdks
           git sparse-checkout set --no-cone iPhoneOS${{ inputs.sdk_version }}.sdk
           git checkout
           mv ./*.sdk "${THEOS}/sdks"
-
-      - name: Build tweak with Theos
-        id: build_tweak
         env:
           THEOS: ${{ github.workspace }}/theos
-          SDK_VER: ${{ inputs.sdk_version }}
-          TARGET_IOS: ${{ inputs.target_version }}
-        run: |
-          set -e
-          cd tweak
-          if [ -f Makefile ]; then
-            sed -i '' "s/^TARGET.*$/TARGET := iphone:clang:${SDK_VER}:${TARGET_IOS}/" Makefile || true
-          fi
-          mkdir -p packages
-          make clean || true
-          make package || make || true
-          DEB=$(find . -type f -name "*.deb" -print | head -n1 || true)
-          if [ -z "$DEB" ]; then
-            DEB=$(find packages -type f -name "*.deb" -print | head -n1 || true)
-          fi
-          if [ -z "$DEB" ]; then
-            echo "ERROR: could not find built .deb in tweak repo. Build may have failed."
-            ls -R . || true
-            exit 1
-          fi
-          echo "deb_path=$PWD/$DEB" >> "$GITHUB_OUTPUT"
-          echo "Built tweak deb: $DEB"
-        shell: bash
 
-      - name: Download & unpack decrypted Twitter/X ipa
-        id: unpack
+      - name: Prepare X iPA
+        run: |
+          wget "$IPA_URL" --no-verbose -O main/packages/com.atebits.Tweetie2.ipa
+          unzip -q main/packages/com.atebits.Tweetie2.ipa -d main/tmp
+          X_VERSION=$(grep -A 1 '<key>CFBundleShortVersionString</key>' main/tmp/Payload/Twitter.app/Info.plist |
+            grep '<string>' | awk -F'[><]' '{print $3}')
+          echo "X_VERSION=${X_VERSION}" >> "$GITHUB_ENV"
+          echo "$X_VERSION"
         env:
           IPA_URL: ${{ inputs.decrypted_ipa_url }}
-        run: |
-          set -e
-          mkdir -p main/packages main/tmp
-          echo "Downloading decrypted ipa from $IPA_URL"
-          wget "$IPA_URL" --no-verbose -O main/packages/original_x.ipa
-          unzip -q main/packages/original_x.ipa -d main/tmp
-          TARGET_APP_DIR=$(find main/tmp/Payload -maxdepth 1 -type d -name "*.app" | head -n1 || true)
-          if [ -z "$TARGET_APP_DIR" ]; then
-            echo "ERROR: could not find .app inside Payload"
-            ls -R main/tmp || true
-            exit 1
-          fi
-          X_VERSION=$(grep -A 1 '<key>CFBundleShortVersionString</key>' "$TARGET_APP_DIR/Info.plist" \
-            | grep '<string>' | awk -F'[><]' '{print $3}' || echo "unknown")
-          echo "target_app_dir=$TARGET_APP_DIR" >> "$GITHUB_OUTPUT"
-          echo "X_VERSION=$X_VERSION" >> "$GITHUB_ENV"
-          echo "X_VERSION=$X_VERSION"
 
-      - name: Apply patches into Twitter.app
+      - name: Build tweak with Theos
         run: |
-          set -e
-          PATCH_SRC="app/NeoFreeBird/Patches"
-          TARGET_APP_DIR="${{ steps.unpack.outputs.target_app_dir }}"
-          if [ ! -d "${PATCH_SRC}" ]; then
-            echo "ERROR: patch source not found at ${PATCH_SRC}"
-            exit 1
-          fi
-          if [ -z "${TARGET_APP_DIR}" ]; then
-            echo "ERROR: could not find .app inside unpacked Payload"
-            exit 1
-          fi
-          rsync -av --delete "${PATCH_SRC}/" "${TARGET_APP_DIR}/"
-          echo "Patched files (sample):"
-          find "${TARGET_APP_DIR}" -maxdepth 2 -type f -print | sed -n '1,200p'
-        shell: bash
+          cd tweak
+          sed -i '' "s/^TARGET.*$/TARGET := iphone:clang:${{ inputs.sdk_version }}:${{ inputs.target_version }}/" Makefile
+          make package
+        env:
+          THEOS: ${{ github.workspace }}/theos
 
-      - name: Repack Payload into IPA
-        id: repack
+      - name: Copy tweak to main packages
         run: |
-          set -e
-          mkdir -p main/packages
-          BASE="NeoFreeBird_base_${{ github.run_id }}_${{ env.X_VERSION }}"
+          DEB_FILE=$(find tweak -name "*.deb" -type f | head -n1)
+          if [ -n "$DEB_FILE" ]; then
+            cp "$DEB_FILE" main/packages/
+          else
+            echo "ERROR: No .deb file found"
+            exit 1
+          fi
+
+      - name: Apply patches and inject tweak
+        run: |
+          # Apply patches to the extracted Twitter.app
+          PATCH_SRC="main/NeoFreeBird/Patches"
+          if [ -d "${PATCH_SRC}" ]; then
+            rsync -av "${PATCH_SRC}/" main/tmp/Payload/Twitter.app/
+          fi
+          
+          # Find the .deb file in main/packages
+          DEB_FILE=$(find main/packages -name "*.deb" -type f | head -n1)
+          
+          # Use cyan to inject the tweak
           cd main/tmp
-          rm -f "../packages/${BASE}.ipa" "../packages/${BASE}.tipa"
-          zip -qr "../packages/${BASE}.ipa" Payload
-          cp "../packages/${BASE}.ipa" "../packages/${BASE}.tipa"
-          echo "base_ipa=main/packages/${BASE}.ipa" >> "$GITHUB_OUTPUT"
-          echo "base_tipa=main/packages/${BASE}.tipa" >> "$GITHUB_OUTPUT"
-          ls -lah ../packages || true
-        shell: bash
+          zip -qr ../packages/temp.ipa Payload
+          cd ..
+          cyan -i packages/temp.ipa -f "$DEB_FILE" -o packages/NeoFreeBird_${{ github.run_id }}_${{ env.X_VERSION }}.ipa
+          
+          # Create .tipa copy
+          cp packages/NeoFreeBird_${{ github.run_id }}_${{ env.X_VERSION }}.ipa packages/NeoFreeBird_${{ github.run_id }}_${{ env.X_VERSION }}.tipa
 
-      - name: Inject compiled tweak into IPA using cyan
-        id: inject
+      - name: Pass package name
+        id: package_name
         run: |
-          set -e
-          DEB_PATH="${{ steps.build_tweak.outputs.deb_path }}"
-          BASE_IPA="${{ steps.repack.outputs.base_ipa }}"
-          BASE_TIPA="${{ steps.repack.outputs.base_tipa }}"
-          if [ -z "$DEB_PATH" ] || [ ! -f "$DEB_PATH" ]; then
-            echo "ERROR: deb not found at $DEB_PATH"
-            ls -lah tweak || true
-            exit 1
-          fi
-          INJECTED_IPA="main/packages/$(basename "${BASE_IPA%.*}")-injected.ipa"
-          INJECTED_TIPA="main/packages/$(basename "${BASE_TIPA%.*}")-injected.tipa"
-          cyan -i "${BASE_IPA}" -f "${DEB_PATH}" -o "${INJECTED_IPA}"
-          cp "${INJECTED_IPA}" "${INJECTED_TIPA}"
-          echo "injected_ipa=${INJECTED_IPA}" >> "$GITHUB_OUTPUT"
-          echo "injected_tipa=${INJECTED_TIPA}" >> "$GITHUB_OUTPUT"
-          ls -lah main/packages || true
-        shell: bash
+          echo "ipa_package=NeoFreeBird_${{ github.run_id }}_${{ env.X_VERSION }}.ipa" >> "$GITHUB_OUTPUT"
+          echo "tipa_package=NeoFreeBird_${{ github.run_id }}_${{ env.X_VERSION }}.tipa" >> "$GITHUB_OUTPUT"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: NeoFreeBird-injected-IPA
-          path: ${{ steps.inject.outputs.injected_ipa }}
+          path: main/packages/${{ steps.package_name.outputs.ipa_package }}
           if-no-files-found: error
 
       - name: Upload TIPA
         uses: actions/upload-artifact@v4
         with:
           name: NeoFreeBird-injected-TIPA
-          path: ${{ steps.inject.outputs.injected_tipa }}
+          path: main/packages/${{ steps.package_name.outputs.tipa_package }}
           if-no-files-found: error
