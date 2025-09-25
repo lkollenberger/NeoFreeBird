@@ -127,7 +127,7 @@ jobs:
       - name: Apply patches and inject tweak
         run: |
           # Apply patches to the extracted Twitter.app
-          PATCH_SRC="main/NeoFreeBird/Patches"
+          PATCH_SRC="main/assets/main"
           if [ -d "${PATCH_SRC}" ]; then
             rsync -av "${PATCH_SRC}/" main/tmp/Payload/Twitter.app/
           fi
