@@ -104,14 +104,12 @@ jobs:
         env:
           THEOS: ${{ github.workspace }}/theos
 
-      - name: Copy built tweak to main/packages
+      - name: Copy deb to main/packages
         run: |
-         TWEAK_DEB=$(find tweak -type f -name "*.deb" | head -n1)
-         if [ -z "$TWEAK_DEB" ]; then
-         echo "No .deb built in tweak repo (tweak/)"
-         exit 1
-         fi
-         cp "$TWEAK_DEB" main/packages/
+         mkdir -p main/packages
+         find tweak -type f -name "*.deb" -exec cp {} main/packages/ \;
+         echo "Files in main/packages after copy:"
+         ls -lh main/packages
 
       - name: Apply patches and inject tweak
         run: |
